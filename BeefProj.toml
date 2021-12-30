@@ -1,0 +1,6 @@
+FileVersion = 1
+
+[Project]
+Name = "gon-beef"
+TargetType = "BeefLib"
+StartupObject = "gon_beef.Program"

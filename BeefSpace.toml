@@ -1,0 +1,8 @@
+FileVersion = 1
+Projects = {gon-beef = {Path = "."}, tests = {Path = "tests"}}
+
+[Workspace]
+StartupProject = "tests"
+
+[Configs.Test.Win64]
+ConfigSelections = {gon-beef = {Config = "Debug"}, tests = {Config = "Test"}}
