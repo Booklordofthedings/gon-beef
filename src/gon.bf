@@ -62,16 +62,19 @@ namespace gon_beef
 			}
 
 			gon output = new .();
-			for(String s in Lines)
+			for(int i < Lines.Count)
 			{
-				if(!(s.StartsWith('o') || s.StartsWith('O')))
+				if(!(Lines[i].StartsWith('o') || Lines[i].StartsWith('O')))
 				{
 					//This should be faster than checking the opposite
 					//This is for normal items
-					if(ParseLine(s) case .Ok(let val))
+					if(ParseLine(Lines[i]) case .Ok(let val))
 						output.items.Add(val);
 				}
-				//TODO: Parse Lines
+				else //Oboi its an object
+					if(ParseGon(ref i,Lines) case .Ok(var val))
+						output.items.Add(val);
+					
 				//TODO: object parser
 			}
 
@@ -115,6 +118,42 @@ namespace gon_beef
 
 				return .Ok(new line(.custom,new String(items[1]), new String(items[2]), new String(items[3]))); //The second entry denotes the type
 			}
+			return .Err;
+		}
+
+		//Return the gon object
+		private static Result<line> ParseGon(ref int index, List<String> view)
+		{
+			//Figure out the name of the object
+			var items = scope List<StringView>(view[index].Split(':'));
+			StringView name = items[1];
+
+			String ending = scope .(name);
+			ending[0] = 'O'; //Set the end of the object
+
+			int counter = 1;
+			int end = index;
+			for(int i = index;  i < view.Count;i++)
+			{
+				if(view[i] == name)
+					counter++;
+				else if(view[i] == ending)
+					counter--;
+
+				if(counter == 0) //found the end of the object
+				{
+					end = i; //Mark the end of the object
+					break;
+				}
+				if(end != 0) //we found something
+				{
+
+				}
+			}
+			//find the end of the object (dual name parser);
+			//Attach all items in the string back together
+			//Mive index to the end position of the object
+			//Create a field from the returned data
 			return .Err;
 		}
 #endregion
