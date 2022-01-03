@@ -77,9 +77,9 @@ namespace gon_beef
 					
 				//TODO: object parser
 			}
-
+			ClearAndDeleteItems!(Lines);
 			
-			return null;
+			return output;
 		}
 
 		///Returns a Line object created from the String
@@ -93,7 +93,7 @@ namespace gon_beef
 				if(double.Parse(items[2]) case .Err)
 					return .Err;
 
-				return .Ok(new line(.number, new String(items[1]), new String(items[2])));
+				return .Ok(new line(.number, items[1], items[2]));
 			}
 			else if(LineIn[0] == 'b') //Bool
 			{
@@ -102,21 +102,21 @@ namespace gon_beef
 				if(bool.Parse(items[2]) case .Err)
 					return .Err;
 
-				return .Ok(new line(.bool, new String(items[1]), new String(items[2])));
+				return .Ok(new line(.bool, items[1], items[2]));
 			}
 			else if(LineIn[0] == 't') //Text
 			{
 				if(items.Count < 3)
 					return .Err;
 
-				return .Ok(new line(.string, new String(items[1]), new String(items[2])));
+				return .Ok(new line(.string, items[1], items[2]));
 			}
 			else if(LineIn[0] == 'c') //Custom
 			{
 				if(items.Count < 4)
 					return .Err;
 
-				return .Ok(new line(.custom,new String(items[1]), new String(items[2]), new String(items[3]))); //The second entry denotes the type
+				return .Ok(new line(.custom,items[1], items[2], items[3])); //The second entry denotes the type
 			}
 			return .Err;
 		}
@@ -147,10 +147,14 @@ namespace gon_beef
 				}
 				if(end != 0) //we found something
 				{
+					String objectS = scope System.String(); //String to attach to
+					for(int i2 = index;  i2 < end; i2++)
+						objectS.Append($"{view[i2]}\n");
 
+					line output = new .(.object,name,Deserialize(objectS));
+					return output;
 				}
 			}
-			//find the end of the object (dual name parser);
 			//Attach all items in the string back together
 			//Mive index to the end position of the object
 			//Create a field from the returned data
@@ -159,6 +163,16 @@ namespace gon_beef
 #endregion
 #region Acess
 		public List<line> items;
+
+		public this()
+		{
+			items = new System.Collections.List<gon_beef.line>();
+		}
+		public ~this()
+		{
+			Console.WriteLine("Test");
+			DeleteContainerAndItems!(items);
+		}
 #endregion
 	}
 
@@ -206,6 +220,28 @@ namespace gon_beef
 		}
 		//Constructor for objects
 		public this(Type _type, System.String _name, gon _object)
+		{
+			type = _type;
+			name = new .(_name);
+			object = _object;
+		}
+
+		//Constructor default
+		public this(Type _type, System.StringView _name, System.StringView _value)
+		{
+			type = _type;
+			name = new .(_name);
+			value = new .(_value);
+		}
+		//Constructor for custom types
+		public this(Type _type,System.StringView _type_name, System.StringView _name, System.StringView _value)
+		{
+			type = _type;
+			name = new .(_name);
+			value = new .(_value);
+		}
+		//Constructor for objects
+		public this(Type _type, System.StringView _name, gon _object)
 		{
 			type = _type;
 			name = new .(_name);

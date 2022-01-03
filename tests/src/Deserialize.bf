@@ -4,6 +4,7 @@ namespace gon_beef
 {
 	extension gon
 	{
+		
 		///Parse a single line and return the input if it parsed as expected
 		public static Result<line> t_sline(String input,bool expected = true)
 		{
@@ -30,7 +31,7 @@ namespace gon_beef
 static
 {
 	[Test]
-	public static Result<void> t_ParseSingleLine()
+	public static void t_ParseSingleLine()
 	{
 		Console.WriteLine("Tests regarding the correct parsing of a single line of string");
 		int tests = 0; //The number of tests in this method
@@ -43,7 +44,7 @@ static
 				p++;
 			else
 				Console.WriteLine("error in expected values when parsing: 'n:number:1'");
-			        
+			delete val;        
 		}tests++;
 		if(gon_beef.gon.t_sline("n:count:600") case .Ok(let val)) 
 		{
@@ -51,7 +52,7 @@ static
 				p++;
 			else
 				Console.WriteLine("error in expected values when parsing: 'n:count:600'");
-			        
+			delete val;        
 		}tests++;
 		if(gon_beef.gon.t_sline("n:string:69420") case .Ok(let val)) 
 		{
@@ -59,7 +60,7 @@ static
 				p++;
 			else
 				Console.WriteLine("error in expected values when parsing: 'n:string:69420'");
-			        
+			delete val;    
 		}tests++;
 
 		//Special Numbers
@@ -69,14 +70,14 @@ static
 				p++;
 			else
 				Console.WriteLine("error in expected values when parsing: 'n:number:3728572345984754357435435'");
-			        
-		}tests++;
+			delete val;
+		}tests++; 
 		double x  = 3728572345984754357435435d;
 
 		if(tests == p)
-			return .Ok;
+			return;
 		else
-			return .Err;
+			System.Runtime.FatalError();
 	}
 }
 
