@@ -72,8 +72,11 @@ namespace gon_beef
 						output.items.Add(val);
 				}
 				else //Oboi its an object
+				{
 					if(ParseGon(ref i,Lines) case .Ok(var val))
 						output.items.Add(val);
+				}
+					
 					
 				//TODO: object parser
 			}
@@ -125,14 +128,15 @@ namespace gon_beef
 		private static Result<line> ParseGon(ref int index, List<String> view)
 		{
 			//Figure out the name of the object
-			var items = scope List<StringView>(view[index].Split(':'));
-			StringView name = items[1];
+			StringView name = view[index];
+			List<StringView> h =scope List<StringView>(view[index].Split(':'));
 
 			String ending = scope .(name);
 			ending[0] = 'O'; //Set the end of the object
 
 			int counter = 1;
 			int end = index;
+			index++;
 			for(int i = index;  i < view.Count;i++)
 			{
 				if(view[i] == name)
@@ -145,21 +149,24 @@ namespace gon_beef
 					end = i; //Mark the end of the object
 					break;
 				}
+			}
 				if(end != 0) //we found something
 				{
 					String objectS = scope System.String(); //String to attach to
 					for(int i2 = index;  i2 < end; i2++)
-						objectS.Append($"{view[i2]}\n");
+					{
+						objectS.Append(view[i2]);
+						objectS.Append('\n');
+					}
 
-					line output = new .(.object,name,Deserialize(objectS));
+					line output = new .(.object,h[1],Deserialize(objectS));
+					index = ++end;
 					return output;
 				}
-			}
-			//Attach all items in the string back together
-			//Mive index to the end position of the object
-			//Create a field from the returned data
+			
 			return .Err;
 		}
+
 #endregion
 #region Acess
 		public List<line> items;
@@ -170,7 +177,6 @@ namespace gon_beef
 		}
 		public ~this()
 		{
-			Console.WriteLine("Test");
 			DeleteContainerAndItems!(items);
 		}
 #endregion
@@ -248,6 +254,36 @@ namespace gon_beef
 			object = _object;
 		}
 
+		public override void ToString(String strBuffer)
+		{
+			strBuffer.Append(this.type.ToString(.. scope .()));
+			strBuffer.Append('\n');
+			if(this.type == .custom)
+			{
+				strBuffer.Append(this.type_name);
+				strBuffer.Append('\n');
+			}
+			strBuffer.Append(this.name);
+			strBuffer.Append('\n');
+			if(this.type == .object)
+			{
+				strBuffer.Append('\n');
+				strBuffer.Append('{');
+				strBuffer.Append('\n');
+				for(line l in this.object.items)
+				{
+					strBuffer.Append(l.ToString(.. scope .()));
+				}
+				strBuffer.Append('\n');
+				strBuffer.Append('}');
 
+			}
+			else
+			{
+				strBuffer.Append(this.value);
+				strBuffer.Append('\n');
+			}
+			strBuffer.Append("----ItemEnd----");
+		}
 	}
 }
