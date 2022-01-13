@@ -34,6 +34,8 @@
 			- O = end of object
 			- c = a custom type. if its a c, then there needs to be a [TypeName]: in between [Type] and [Name] to specify what it is.
 	- Lines that do not follow that structure will be ignored
+
+	TODO:Improve documentation and readme
 */
 #endregion
 using System;
@@ -43,6 +45,8 @@ namespace gon_beef
 	class gon
 	{
 #region Serializing
+		//TODO: add an easy way to serialize gon objects
+		//TODO: Serialize ToJSON
 #endregion
 #region Deserialize
 		public static gon Deserialize(String object)
@@ -78,7 +82,7 @@ namespace gon_beef
 				}
 					
 					
-				//TODO: object parser
+			
 			}
 			ClearAndDeleteItems!(Lines);
 			
@@ -169,22 +173,65 @@ namespace gon_beef
 
 #endregion
 #region Acess
-		public List<line> items;
+		//TODO: Improve ways acessing and filtering parsed objects
+		public List<line> items; //You can acess this directly, but you probably should use the gon object directly
 
-		public this()
+		//Accessing via string
+		public ref line this[String key]
+		{
+			public get //Returns the first line with the given name and fatal errors if it doesn't exist
+			{
+				for(int i < items.Count)
+				{
+					if(items[i].name == key)
+						return ref items[i];
+				}
+				Runtime.FatalError("No object of this name found");
+			}
+		}
+
+		//Accessing via index
+		public ref line this[int key]
+		{
+			public get //Returns the line at the given index and fatal errors if it doesn't exist
+			{
+				if(key < items.Count && key >= 0)
+					return ref items[key];
+				Runtime.FatalError("Index out of scope error");
+			}
+		}
+
+		//Searching methods
+		///Returns every line
+		public Selection Search() => Search(false,false,false);
+		///Returns all lines of a given type
+		/// @param cType cType needs to be given if t = .custom otherwise it wont work as expected
+		public Selection Search(line.Type t, String cType = "none") => Search(true,false,false,t,"default",cType);
+		///Return all lines of a given name
+		///Full searching method. to complex to use which why there are "api" methods connecting to this one
+		private Selection Search(bool doType, bool doName, bool doCType,line.Type t = .string, String name = "default", String cType = "none")
+		{
+			Runtime.FatalError("NotImplementedYet  Error");
+		}
+		
+#endregion
+
+		public this() //The constructor just initializes the list
 		{
 			items = new System.Collections.List<gon_beef.line>();
 		}
-		public ~this()
+		public ~this() //Cleanup
 		{
 			DeleteContainerAndItems!(items);
 		}
-#endregion
-	}
+		
+	} //End of gon class
 
 	//This is the class that the end user actually gets from the gon object
 	class line
 	{
+		//TODO: Write proper acessors to the data laying behind a type
+		//TODO: add a static dictionary for generic custom types to be parsed Dictionary<String,T Function(String input)> | T = custom type
 		public enum Type
 		{
 			number,
@@ -192,6 +239,7 @@ namespace gon_beef
 			string,
 			object,
 			custom
+			
 		}
 		/* Permanent members */
 		public System.String name; //Name of the object
@@ -243,6 +291,7 @@ namespace gon_beef
 		public this(Type _type,System.StringView _type_name, System.StringView _name, System.StringView _value)
 		{
 			type = _type;
+			type_name = new .(_type_name);
 			name = new .(_name);
 			value = new .(_value);
 		}
@@ -254,6 +303,7 @@ namespace gon_beef
 			object = _object;
 		}
 
+		//TODO:Cleanup the to string method
 		public override void ToString(String strBuffer)
 		{
 			strBuffer.Append(this.type.ToString(.. scope .()));
@@ -267,7 +317,6 @@ namespace gon_beef
 			strBuffer.Append('\n');
 			if(this.type == .object)
 			{
-				strBuffer.Append('\n');
 				strBuffer.Append('{');
 				strBuffer.Append('\n');
 				for(line l in this.object.items)
@@ -282,8 +331,14 @@ namespace gon_beef
 			{
 				strBuffer.Append(this.value);
 				strBuffer.Append('\n');
+				strBuffer.Append("----ItemEnd----\n");
 			}
-			strBuffer.Append("----ItemEnd----");
-		}
+		} //ToString end
+	} //line class end
+
+	struct  Selection //This will be returned, if you search the gon object
+	{
+		line*[] items;
 	}
+
 }

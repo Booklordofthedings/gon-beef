@@ -5,16 +5,10 @@ namespace tests
 	{
 		public static void Main()
 		{
+			
 			gon_beef.gon test =gon_beef.gon.Deserialize("""
-				n:test:1
-				b:sda:true
-				o:test
-				n:hello:1
-				o:more
-				n:hello:1
-				O:more
-				n:hello:1
-				O:test
+				//USE THIS TO TEST THE STANDART
+				t:value:key
 				""");
 			for(gon_beef.line l in test.items)
 			{
