@@ -10,7 +10,7 @@
 	language should be easily doable.
 
 	This Project/File/Notation is licensed under the Mit license
-	(C)2021 Jannis-Leander von Hagen
+	(C)2022 Jannis
 */
 #endregion
 #region Documentation
@@ -22,7 +22,7 @@
 	- A general GON file should use a .gon file extension and use the first line to identify its type, unless otherwise necessary
 	- The file will be parsed line by line, using newline as the divider. (This makes it harder to multithread parse, but it makes it easier to parse)
 		(Data that has a \n in the original should be parsed to only fill a single line. In beef there is a QuoteString() method that allows this)
-	- A line may start with any amount of control characters, like tabs or spaces, those will be removed before it is parsed
+	- A line may start with any amount of whitespace characters, like tabs or spaces, those will be removed before it is parsed
 	- The structure for a line is as follows:
 		[Type]:[Name]:[Value]
 
@@ -35,7 +35,22 @@
 			- c = a custom type. if its a c, then there needs to be a [TypeName]: in between [Type] and [Name] to specify what it is.
 	- Lines that do not follow that structure will be ignored
 
-	TODO:Improve documentation and readme
+
+	Example:
+
+	//Any line that isnt a valid object should be ignored
+
+	n:Number:1212.32323
+	t:Text:you can put stuff here, but cant use space. use \n instead
+	b:Bool:true
+	//There is no inherent support for custom type parsers, but having something like this sure helps
+	c:rgba:Color:{255,255,255,255}
+
+	o:Object
+	//An object that contains nothing
+	O:Object
+
+	t:Text:There is no dublicate key limitation in gon
 */
 #endregion
 using System;
@@ -45,8 +60,217 @@ namespace gon_beef
 	class gon
 	{
 #region Serializing
-		//TODO: add an easy way to serialize gon objects
-		//TODO: Serialize ToJSON
+		public static void Serialize(String output, gon input)
+		{
+			output.Clear();
+			serialize(output, input);
+		}
+		//A private version of the old one, that doesnt clear. used for recursion
+		private static void serialize(String output, gon input)
+		{
+			//Since the string has been cleared we can now append
+			for(gon_beef.line i in input.items)
+			{
+				switch(i.type)
+				{
+
+				case .bool: //BOOL
+					output.Append('b');
+					output.Append(':');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append(' ');
+					output.Append(':');
+					if(i.value != null)
+						output.Append(i.value);
+					else
+						output.Append(' ');
+					output.Append('\n');
+					break;
+
+				case .number: //NUMBER
+					output.Append('n');
+					output.Append(':');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append(' ');
+					output.Append(':');
+					if(i.value != null)
+						output.Append(i.value);
+					else
+						output.Append(' ');
+					output.Append('\n');
+					break;
+
+				case .string: //TEXT
+					output.Append('t');
+					output.Append(':');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append(' ');
+					output.Append(':');
+					if(i.value != null)
+					{
+						String temp = scope String();
+						i.value.Unescape(temp);
+						output.Append(temp);
+					}
+					output.Append('\n');
+					break;
+				case .custom: //CUSTOM
+					output.Append('c');
+					output.Append(':');
+					if(i.type_name != null)
+						output.Append(i.type_name);
+					else
+						output.Append(' ');
+					output.Append(':');
+					if(i.value != null)
+						output.Append(i.value);
+					else
+						output.Append(' ');
+						output.Append('\n');
+					break;
+				case .object: //Objects
+					output.Append('o');
+					output.Append(':');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append(' ');
+					output.Append('\n');
+						gon.serialize(output,i.object);
+					output.Append('O');
+					output.Append(':');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append(' ');
+					output.Append('\n');
+					break;
+				}
+			}
+		}
+		/// !!WARNING doesnt check for dublicate keys
+		public static void ToJSON(String output, gon input, bool cBrackets = true)
+		{
+			Dictionary<String,String> nameList = scope .();
+			int mod = 1;
+			if(cBrackets)
+				output.Append("{\n");
+			
+			for(gon_beef.line i in input.items)
+			{
+				if(!nameList.TryAdd(i.name,i.name))
+				{
+					mod++;
+					continue;
+				}	
+			
+				switch(i.type)
+				{
+
+				case .bool: //BOOL
+					output.Append('"');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append("bool");
+					output.Append('"');
+					output.Append(':');
+					if(i.value != null)
+					{
+						i.value.ToLower();
+						output.Append(i.value);
+					}
+					else
+						output.Append("true");
+					break;
+
+				case .number: //NUMBER
+					output.Append('"');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append("name");
+					output.Append('"');
+					output.Append(':');
+					if(i.value != null)
+						output.Append(i.value);
+					else
+						output.Append('1');
+					break;
+
+				case .string: //TEXT
+					output.Append('"');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append("name");
+					output.Append('"');
+					output.Append(':');
+					if(i.value != null)
+					{
+						output.Append('"');
+						output.Append(i.value);
+						output.Append('"');
+					}
+					else
+					{
+						output.Append('"');
+						output.Append("text");
+						output.Append('"');
+					}
+					break;
+				case .custom: //CUSTOM
+					output.Append('"');
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append("custom");
+					output.Append("\":{\n");
+					output.Append("\"type\":");
+					output.Append('"');
+					if(i.type_name != null)
+						output.Append(i.type_name);
+					else
+						output.Append("custom");
+					output.Append("\",\n");
+					output.Append("\"value\":");
+
+					output.Append('"');
+					if(i.type_name != null)
+						output.Append(i.value);
+					else
+						output.Append("val");
+					output.Append("\"\n}");
+					
+					break;
+				case .object: //Objects
+					output.Append("\"");
+					if(i.name != null)
+						output.Append(i.name);
+					else
+						output.Append("object");
+					output.Append("\":");
+					gon.ToJSON(output,i.object,true);
+					break;
+
+					
+
+				}
+				if(@i.Index < (input.items.Count-mod) && (@i.Index+2) < (input.items.Count-mod)) //The second hack is so, that dublicate keys dont cause errors with the ","
+					output.Append(',');
+				output.Append('\n');
+
+
+			}
+			if(cBrackets)
+				output.Append("}\n");
+		}
 #endregion
 #region Deserialize
 		public static gon Deserialize(String object)
@@ -75,7 +299,7 @@ namespace gon_beef
 					if(ParseLine(Lines[i]) case .Ok(let val))
 						output.items.Add(val);
 				}
-				else //Oboi its an object
+				else if(Lines[i].StartsWith('o')) //Oboi its an object
 				{
 					if(ParseGon(ref i,Lines) case .Ok(var val))
 						output.items.Add(val);
@@ -131,22 +355,25 @@ namespace gon_beef
 		//Return the gon object
 		private static Result<line> ParseGon(ref int index, List<String> view)
 		{
+			
 			//Figure out the name of the object
 			StringView name = view[index];
 			List<StringView> h =scope List<StringView>(view[index].Split(':'));
-
 			String ending = scope .(name);
 			ending[0] = 'O'; //Set the end of the object
 
 			int counter = 1;
 			int end = index;
-			index++;
-			for(int i = index;  i < view.Count;i++)
+			for(int i = index +1 ;  i < view.Count;i++)
 			{
 				if(view[i] == name)
+				{
 					counter++;
+				}
 				else if(view[i] == ending)
+				{
 					counter--;
+				}
 
 				if(counter == 0) //found the end of the object
 				{
@@ -154,7 +381,8 @@ namespace gon_beef
 					break;
 				}
 			}
-				if(end != 0) //we found something
+		
+				if(end != index) //we found something
 				{
 					String objectS = scope System.String(); //String to attach to
 					for(int i2 = index;  i2 < end; i2++)
@@ -164,16 +392,14 @@ namespace gon_beef
 					}
 
 					line output = new .(.object,h[1],Deserialize(objectS));
-					index = ++end;
+					index = end;
 					return output;
 				}
-			
 			return .Err;
 		}
 
 #endregion
 #region Acess
-		//TODO: Improve ways acessing and filtering parsed objects
 		public List<line> items; //You can acess this directly, but you probably should use the gon object directly
 
 		//Accessing via string
@@ -203,15 +429,70 @@ namespace gon_beef
 
 		//Searching methods
 		///Returns every line
-		public Selection Search() => Search(false,false,false);
+		public line*[] Search() => Search(false,false);
 		///Returns all lines of a given type
 		/// @param cType cType needs to be given if t = .custom otherwise it wont work as expected
-		public Selection Search(line.Type t, String cType = "none") => Search(true,false,false,t,"default",cType);
+		public line*[] Search(line.Type t, String cType = "none") => Search(true,false,t,"default",cType);
 		///Return all lines of a given name
+		public line*[] Seach(String name) => Search(false,true,.string,name);
+		///Return all lines with a given type and name
+		public line*[] Search(line.Type t, String name, String cType = "none") => Search(true,true,t,name,cType);
 		///Full searching method. to complex to use which why there are "api" methods connecting to this one
-		private Selection Search(bool doType, bool doName, bool doCType,line.Type t = .string, String name = "default", String cType = "none")
+		private line*[] Search(bool doType, bool doName,line.Type t = .string, String name = "default", String cType = "none")
 		{
-			Runtime.FatalError("NotImplementedYet  Error");
+			List<line*> foundItems = scope .();
+
+			for(line l in items)
+			{
+				if(doType) //Dont check type if bool isnt given
+				{
+					if(l.type != t) //The type is wrong
+						continue;
+					if(l.type == .custom && l.type_name != cType) //The type is the same, but the custom type is different
+						continue;
+				}
+				if(doName) //Dont check name if bool isnt given
+				{
+					if(l.name != name) //The name is different
+						continue;
+				}
+					foundItems.Add(&l); //Found an entry
+			}
+
+			line*[] s = new line*[foundItems.Count];
+			for(int i = 0; i < foundItems.Count; i++)
+			{
+				s[i] = foundItems[i];
+			}
+			return s;
+		}
+
+		///Fill the mask object with data from the object
+		public void MaskGON(ref gon mask)
+		{
+			
+			Dictionary<String, int> counter = scope .(); //So that we know which item we need from the returned list
+			for(line i in mask.items)
+			{
+				if(!counter.TryAdd(i.name,0)) //Index of the returned item we need
+					counter[i.name]++;
+				line*[] found;
+				if(i.type == .custom)
+					found = this.Search(i.type,i.name,i.type_name);
+				else
+					found = this.Search(i.type,i.name,"none");
+				//Found now contains a line pointer to all found items
+				if(found[counter[i.name]] != null)
+				{
+					//object is a member of line
+					//found = line*[]
+					if(i.type == .custom)
+						(*found[counter[i.name]]).object.MaskGON(ref i.object);
+					else if((*found[counter[i.name]]).value != null)
+						i.value = new String((*found[counter[i.name]]).value);
+				}
+				delete found;
+			}
 		}
 		
 #endregion
@@ -225,13 +506,12 @@ namespace gon_beef
 			DeleteContainerAndItems!(items);
 		}
 		
-	} //End of gon class
+	}
 
+#region OutputType
 	//This is the class that the end user actually gets from the gon object
 	class line
 	{
-		//TODO: Write proper acessors to the data laying behind a type
-		//TODO: add a static dictionary for generic custom types to be parsed Dictionary<String,T Function(String input)> | T = custom type
 		public enum Type
 		{
 			number,
@@ -249,6 +529,40 @@ namespace gon_beef
 		public System.String type_name; //The name of the type of the object (Only exists, if type is custom)
 		public gon object; //If type is object this contains the object
 
+		//Get the value as the included type from a line object
+		public bool GetVal(ref bool output)
+		{
+			if(value == null || type != .bool)
+				return false;
+			if(bool.Parse(value) case .Ok(let val))
+			{
+				output = val;
+				return true;
+			}
+			return false;
+		}
+		public bool GetVal(ref double output)
+		{
+			if(value == null || type != .number)
+				return false;
+			if(double.Parse(value) case .Ok(let val))
+			{
+				output = val;
+				return true;
+			}
+			return false;
+		}
+		public bool GetVal(String output)
+		{
+			if(value == null || type != .string)
+				return false;
+			output.Clear();
+			String.UnQuoteString(value,value.Length,output);
+			output.Append(value);
+			return true;
+		}
+
+
 		//Destructor, that just clears all objects
 		public ~this()
 		{
@@ -257,7 +571,6 @@ namespace gon_beef
 			delete type_name;
 			delete object;
 		}
-
 		//Constructor default
 		public this(Type _type, System.String _name, System.String _value)
 		{
@@ -333,12 +646,12 @@ namespace gon_beef
 				strBuffer.Append('\n');
 				strBuffer.Append("----ItemEnd----\n");
 			}
-		} //ToString end
-	} //line class end
 
-	struct  Selection //This will be returned, if you search the gon object
-	{
-		line*[] items;
-	}
+		} //ToString end
+
+	} //line class end
+#endregion
+	
+
 
 }
